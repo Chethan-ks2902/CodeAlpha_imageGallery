@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title> Gallery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #d2d3fd;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0056b3;
+            font-size: 50px;
+        }
+
+        input {
+            display: block;
+            margin: 0 auto;
+            margin-bottom: 20px;
+            padding: 20px;
+            font-size: 14px;
+        }
+
+        button {
+            display: block;
+            margin: 0 auto;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .gallery {
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Increased the min size to 200px */
+            gap: 15px; /* Adds a gap between the items */
+            max-width: 1200px;
+        }
+
+        .gallery-item {
+            position: relative;
+            width: 100%;
+        }
+
+        .gallery img, .gallery video {
+            width: 100%;
+            height: auto; /* Maintain aspect ratio */
+            max-height: 300px; /* Set a max height for the images/videos */
+            border-radius: 10px;
+            display: block;
+            transition: transform 0.3s;
+        }
+
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: red;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .remove-btn:hover {
+            background-color: darkred;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* Smaller min size for smaller screens */
+            }
+        }
+
+        @media (max-width: 600px) {
+            .gallery {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); /* Even smaller min size for very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Gallery</h1>
+
+    <!-- File Input to add new images and videos -->
+    <input type="file" id="fileInput" accept="image/*, video/*" multiple />
+    <button onclick="addMedia()">Add Media</button>
+
+    <!-- Media Gallery -->
+    <div class="gallery" id="gallery">
+        <!-- Images and videos will be dynamically inserted here -->
+    </div>
+
+    <script>
+        // Load media from localStorage on page load
+        document.addEventListener("DOMContentLoaded", loadMediaFromStorage);
+
+        // Add multiple images and videos
+        function addMedia() {
+            const input = document.getElementById("fileInput");
+            const gallery = document.getElementById("gallery");
+
+            // Check if files are selected
+            if (input.files) {
+                // Iterate through all selected files
+                Array.from(input.files).forEach((file) => {
+                    const reader = new FileReader();
+
+                    // When the media is loaded, add it to the gallery
+                    reader.onload = function (e) {
+                        const newMedia = createMediaElement(e.target.result, file.type);
+                        gallery.appendChild(newMedia);
+                        saveMediaToStorage(e.target.result, file.type); // Save media to localStorage
+                    };
+
+                    // Read the file as a Data URL
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+
+        // Create a media element (image or video) with a remove button
+        function createMediaElement(src, type) {
+            const galleryItem = document.createElement("div");
+            galleryItem.classList.add("gallery-item");
+
+            let mediaElement;
+
+            if (type.startsWith("video")) {
+                mediaElement = document.createElement("video");
+                mediaElement.src = src;
+                mediaElement.loop = true; // Loop the video
+                mediaElement.controls = true; // Add controls for the video
+            } else {
+                mediaElement = document.createElement("img");
+                mediaElement.src = src;
+                mediaElement.alt = "Uploaded image"; // Accessibility improvement
+            }
+
+            const removeButton = document.createElement("button");
+            removeButton.textContent = "Remove";
+            removeButton.classList.add("remove-btn");
+            removeButton.onclick = function () {
+                removeMedia(galleryItem, src);
+            };
+
+            galleryItem.appendChild(mediaElement);
+            galleryItem.appendChild(removeButton);
+
+            return galleryItem;
+        }
+
+        // Save media to localStorage
+        function saveMediaToStorage(mediaSrc, mediaType) {
+            let mediaItems = JSON.parse(localStorage.getItem("galleryMedia")) || [];
+            mediaItems.push({ src: mediaSrc, type: mediaType });
+            localStorage.setItem("galleryMedia", JSON.stringify(mediaItems));
+        }
+
+        // Load media from localStorage
+        function loadMediaFromStorage() {
+            const mediaItems = JSON.parse(localStorage.getItem("galleryMedia")) || [];
+            const gallery = document.getElementById("gallery");
+
+            mediaItems.forEach(({ src, type }) => {
+                const newMedia = createMediaElement(src, type);
+                gallery.appendChild(newMedia);
+            });
+        }
+
+        // Remove media from gallery and localStorage
+        function removeMedia(element, mediaSrc) {
+            element.remove(); // Remove from the gallery
+
+            // Remove from localStorage
+            let mediaItems = JSON.parse(localStorage.getItem("galleryMedia")) || [];
+            mediaItems = mediaItems.filter((item) => item.src !== mediaSrc);
+            localStorage.setItem("galleryMedia", JSON.stringify(mediaItems));
+        }
+    </script>
+</body>
+</html>
